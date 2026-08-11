@@ -49,8 +49,7 @@
 
   // ---- 解析網址參數 ------------------------------------------------
   // 中繼頁參數與 Deep Link 參數 1:1 對應，直接透傳整個 query string。
-  // 例如 ?Action=AGREESIGN&MARKET=SK&PAGENO=850
-  //  -> fap-aipro://Launcher?Action=AGREESIGN&MARKET=SK&PAGENO=850
+  
   var rawQuery = window.location.search.replace(/^\?/, "");
   var params = new URLSearchParams(window.location.search);
 
