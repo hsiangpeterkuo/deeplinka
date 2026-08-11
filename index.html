@@ -12,21 +12,9 @@
     height: 100%;
     background: #fff;
   }
-  #msg {
-    display: none;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    color: #333;
-  }
 </style>
 </head>
 <body>
-<div id="msg">請用手機裝置開啟此連結</div>
 <script>
 (function () {
   "use strict";
@@ -36,6 +24,7 @@
   var IOS_STORE_URL = "https://apps.apple.com/tw/app/id6751573234";
   var ANDROID_STORE_URL = "https://play.google.com/store/apps/details?id=com.fubon.securities.fubonaipro&hl=zh_TW";
   var ANDROID_PACKAGE = "com.fubon.securities.fubonaipro";
+  var DESKTOP_URL = "https://www.fubon.com/securities/aipro/index.html";
   var FALLBACK_TIMEOUT_MS = 2000;
 
   var ua = navigator.userAgent || navigator.vendor || window.opera || "";
@@ -43,7 +32,7 @@
   var isAndroid = /Android/.test(ua);
 
   if (!isIOS && !isAndroid) {
-    document.getElementById("msg").style.display = "flex";
+    window.location.href = DESKTOP_URL;
     return;
   }
 
