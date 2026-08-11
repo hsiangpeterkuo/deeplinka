@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>富邦 AI PRO</title>
+<style>
+  :root {
+    color-scheme: light;
+    --brand: #004b8d;
+    --brand-dark: #00305c;
+    --bg: #f4f6f9;
+    --text: #1b2733;
+    --text-muted: #6b7684;
+    --card-bg: #ffffff;
+    --border: #e3e7ed;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+  }
+  .wrap {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+  .logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: var(--brand);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+  }
+  h1 {
+    font-size: 18px;
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  p.desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0 0 24px;
+    line-height: 1.6;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 20px;
+    border: 3px solid var(--border);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary {
+    background: var(--brand);
+    color: #fff;
+  }
+  .btn-primary:active { background: var(--brand-dark); }
+  .btn-secondary {
+    background: #fff;
+    color: var(--brand);
+    border: 1px solid var(--border);
+  }
+  .fallback {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .fallback.show { display: block; }
+  .fallback p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 16px;
+  }
+  .error {
+    color: #b3261e;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="logo">AI</div>
+    <div class="spinner" id="spinner"></div>
+    <h1 id="title">正在為您開啟富邦 AI PRO</h1>
+    <p class="desc" id="desc">請稍候，系統將自動為您開啟 App 內指定頁面</p>
+
+    <a class="btn btn-primary" id="manualOpenBtn" href="#">手動開啟 AI PRO</a>
+
+    <div class="fallback" id="fallback">
+      <p>尚未安裝 AI PRO？請前往下載</p>
+      <a class="btn btn-secondary" id="iosStoreBtn" href="#" target="_blank" rel="noopener">App Store 下載（iOS）</a>
+      <a class="btn btn-secondary" id="androidStoreBtn" href="#" target="_blank" rel="noopener">Google Play 下載（Android）</a>
+    </div>
+
+    <p class="error" id="errorMsg">連結參數不完整，請確認來源連結是否正確。</p>
+    <p class="hint" id="hintMsg">如自動跳轉未成功，請點擊上方按鈕手動開啟</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- 固定設定：下載連結與 App Scheme -------------------------------
+  var APP_SCHEME_HOST = "fap-aipro://Launcher";
+  var IOS_STORE_URL = "https://apps.apple.com/tw/app/id6751573234";
+  var ANDROID_STORE_URL = "https://play.google.com/store/apps/details?id=com.fubon.securities.fubonaipro&hl=zh_TW";
+  var ANDROID_PACKAGE = "com.fubon.securities.fubonaipro";
+  var FALLBACK_TIMEOUT_MS = 2000;
+  var SHOW_FALLBACK_BUTTONS_MS = 1500;
+
+  // ---- 解析網址參數 ------------------------------------------------
+  // 中繼頁參數與 Deep Link 參數 1:1 對應，直接透傳整個 query string。
+  // 例如 ?Action=AGREESIGN&MARKET=SK&PAGENO=850
+  //  -> fap-aipro://Launcher?Action=AGREESIGN&MARKET=SK&PAGENO=850
+  var rawQuery = window.location.search.replace(/^\?/, "");
+  var params = new URLSearchParams(window.location.search);
+
+  var hasAction = false;
+  params.forEach(function (value, key) {
+    if (key.toLowerCase() === "action" && value) hasAction = true;
+  });
+
+  var deepLink = APP_SCHEME_HOST + (rawQuery ? "?" + rawQuery : "");
+
+  var ua = navigator.userAgent || navigator.vendor || window.opera || "";
+  var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var isAndroid = /Android/.test(ua);
+
+  // ---- DOM ----------------------------------------------------------
+  var spinnerEl = document.getElementById("spinner");
+  var titleEl = document.getElementById("title");
+  var descEl = document.getElementById("desc");
+  var manualBtn = document.getElementById("manualOpenBtn");
+  var fallbackEl = document.getElementById("fallback");
+  var iosStoreBtn = document.getElementById("iosStoreBtn");
+  var androidStoreBtn = document.getElementById("androidStoreBtn");
+  var errorMsg = document.getElementById("errorMsg");
+  var hintMsg = document.getElementById("hintMsg");
+
+  iosStoreBtn.href = IOS_STORE_URL;
+  androidStoreBtn.href = ANDROID_STORE_URL;
+
+  if (!hasAction) {
+    spinnerEl.style.display = "none";
+    titleEl.textContent = "無法開啟指定頁面";
+    descEl.textContent = "缺少必要參數（Action），請確認連結來源。";
+    manualBtn.style.display = "none";
+    hintMsg.style.display = "none";
+    errorMsg.style.display = "block";
+    fallbackEl.classList.add("show");
+    return;
+  }
+
+  if (!isIOS) iosStoreBtn.style.display = "none";
+  if (!isAndroid) androidStoreBtn.style.display = "none";
+  if (!isIOS && !isAndroid) {
+    descEl.textContent = "偵測到您非使用行動裝置瀏覽，請改用手機開啟本連結，或直接前往下載頁面。";
+  }
+
+  function buildAndroidIntentUrl() {
+    // Android intent:// 語法可在同一次導轉中處理「已安裝就開 App／未安裝就導去 Play 商店」
+    var intentPath = rawQuery ? "Launcher?" + rawQuery : "Launcher";
+    return "intent://" + intentPath +
+      "#Intent;scheme=fap-aipro;package=" + ANDROID_PACKAGE +
+      ";S.browser_fallback_url=" + encodeURIComponent(ANDROID_STORE_URL) + ";end";
+  }
+
+  var storeUrl = isIOS ? IOS_STORE_URL : (isAndroid ? ANDROID_STORE_URL : null);
+  var fallbackTimer = null;
+  var redirected = false;
+
+  function clearFallbackTimer() {
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }
+  }
+
+  function goToStore() {
+    if (redirected || !storeUrl || document.hidden) return;
+    redirected = true;
+    window.location.href = storeUrl;
+  }
+
+  function attemptOpenApp() {
+    if (isAndroid) {
+      // Chrome / 多數 Android 瀏覽器：intent:// 會自動處理未安裝時的商店導轉
+      window.location.href = buildAndroidIntentUrl();
+      // 保險：若 intent:// 在少數瀏覽器中未被正確處理，仍以計時器補上備援
+      fallbackTimer = setTimeout(goToStore, FALLBACK_TIMEOUT_MS);
+    } else if (isIOS) {
+      window.location.href = deepLink;
+      fallbackTimer = setTimeout(goToStore, FALLBACK_TIMEOUT_MS);
+    }
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) clearFallbackTimer();
+  });
+  window.addEventListener("pagehide", clearFallbackTimer);
+
+  manualBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    clearFallbackTimer();
+    redirected = false;
+    attemptOpenApp();
+  });
+
+  // 頁面載入即自動嘗試開啟一次
+  if (isIOS || isAndroid) {
+    attemptOpenApp();
+  } else {
+    spinnerEl.style.display = "none";
+  }
+
+  // 一段時間後顯示下載備援按鈕，避免自動跳轉尚未觸發前使用者無所適從
+  setTimeout(function () {
+    fallbackEl.classList.add("show");
+  }, SHOW_FALLBACK_BUTTONS_MS);
+})();
+</script>
+</body>
+</html>
