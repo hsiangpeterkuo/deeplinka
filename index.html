@@ -12,9 +12,35 @@
     height: 100%;
     background: #fff;
   }
+  #desktopMsg {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #desktopMsg p {
+    margin: 0;
+  }
+  #desktopMsg .main {
+    font-size: 16px;
+    color: #333;
+  }
+  #desktopMsg .sub {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #999;
+  }
 </style>
 </head>
 <body>
+<div id="desktopMsg">
+  <p class="main">您目前使用電腦裝置，請使用手機下載富邦AI PRO</p>
+  <p class="sub">即將前往富邦AI PRO介紹頁面（<span id="countdown">3</span>）</p>
+</div>
 <script>
 (function () {
   "use strict";
@@ -32,7 +58,19 @@
   var isAndroid = /Android/.test(ua);
 
   if (!isIOS && !isAndroid) {
-    window.location.href = DESKTOP_URL;
+    var desktopMsgEl = document.getElementById("desktopMsg");
+    var countdownEl = document.getElementById("countdown");
+    desktopMsgEl.style.display = "flex";
+    var remaining = 3;
+    var countdownTimer = setInterval(function () {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        window.location.href = DESKTOP_URL;
+        return;
+      }
+      countdownEl.textContent = remaining;
+    }, 1000);
     return;
   }
 
