@@ -16,7 +16,21 @@ fap-aipro://Launcher?Action=AGREESIGN&MARKET=SK&PAGENO=850
 
 `Action` 之後可以帶任意參數，同一份頁面支援 AI PRO 全部 Action（申購簽署、資產總覽、下單、條件單…等 100+ 種，詳見 `AI PRO_CallBack Function` 對照表），不需要每個功能另外開一頁。必要參數：`Action`，缺少時頁面不會有任何動作（空白頁）。
 
-> 曾經試過用 `?d=<base64url>` 把 query string 包起來做輕度混淆，但拿掉了——base64 包裝對「有心人用 DevTools 看」沒有實質防護效果（瀏覽器最終還是要解碼成明文才能執行），純粹增加除錯與對接的複雜度，所以改回明文。
+### 選用：`?d=<base64url>`（特殊字元防護，不是混淆用）
+
+如果來源系統（例如行銷寄信、某些不受控的 HTML 編輯器）沒辦法保證會正確做 `encodeURIComponent`，參數值裡萬一出現 `#`、`&`、空白等字元，直接明文帶可能會弄壞網址結構（`#` 之後的內容甚至會被瀏覽器直接丟棄，連我們的頁面都讀不到）。
+
+這種情況可以改用 `?d=`，把整串 query string 先做 base64url 編碼再放進去，因為 base64url 輸出只會有英數字、`-`、`_`，不可能出現任何危險字元：
+
+```
+真正要送的內容：Action=AGREESIGN&MARKET=SK&PAGENO=850
+                ↓ base64url 編碼
+中繼頁網址：https://hsiangpeterkuo.github.io/deeplinka/?d=QWN0aW9uPUFHUkVFU0lHTiZNQVJLRVQ9U0smUEFHRU5PPTg1MA
+```
+
+有 `d` 就優先解 `d`，沒有 `d` 才吃明文參數，兩種格式並存、擇一使用即可。**產生 `d=` 時記得去掉結尾的 `=` padding**（`.rstrip("=")` / 對應語言的寫法），原因見上方「有些環境對網址結尾是 `=` 處理不好」的實測結果；參數值本身自帶的 `=`（例如加密 token）不受影響、不要去動它。
+
+> 之前拿掉過一次 `?d=`，當時的理由是「混淆對防止 DevTools 查看沒有實質效果」——這個理由依然成立，`?d=` **不是** 用來隱藏內容的，單純是防止特殊字元弄壞網址結構的工程手段，兩者是不同的目的。
 
 ## 裝置行為
 
