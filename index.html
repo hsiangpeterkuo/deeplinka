@@ -79,7 +79,7 @@
   }
 
   // ---- 解析網址參數 ------------------------------------------------
-  // 中繼頁參數與 Deep Link 參數 1:1 對應，明文直接透傳整個 query string
+  // 中繼頁參數與 Deep Link 參數 1:1 對應，預設明文直接透傳整個 query string
   // （env 是控制測試版 scheme 用的保留字，不會轉發給 App）。
   // 防呆：如果連結來源沒把 & 正確處理、變成字面上的 &amp;，這裡先還原回 &，
   // 不然 Action 會被解析成 amp;Action，整頁會完全沒反應。
@@ -88,9 +88,34 @@
   var isTestMode = searchParams.get("env") === "test";
   var schemeName = isTestMode ? TEST_SCHEME_NAME : SCHEME_NAME;
   var appSchemeHost = schemeName + "://Launcher";
-  searchParams.delete("env");
-  var rawQuery = searchParams.toString();
-  var params = searchParams;
+
+  // 可選：?d=<base64url>，把整串 query string 編碼成單一參數。
+  // 用途不是隱藏內容，是讓參數值裡萬一出現 #、&、空白等特殊字元時
+  // （例如行銷信裡沒做好 encodeURIComponent）不會弄壞網址結構，
+  // 因為 base64url 輸出只會有英數字、- 和 _。有 d 就優先用 d，沒有才吃明文參數。
+  function base64UrlDecode(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var binary = atob(str);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  var dParam = searchParams.get("d");
+  var rawQuery;
+  if (dParam) {
+    try {
+      rawQuery = base64UrlDecode(dParam);
+    } catch (e) {
+      rawQuery = "";
+    }
+  } else {
+    searchParams.delete("env");
+    searchParams.delete("d");
+    rawQuery = searchParams.toString();
+  }
+  var params = new URLSearchParams(rawQuery);
 
   var hasAction = false;
   params.forEach(function (value, key) {
