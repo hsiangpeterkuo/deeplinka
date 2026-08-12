@@ -76,29 +76,15 @@
   }
 
   // ---- 解析網址參數 ------------------------------------------------
-  function base64UrlDecode(str) {
-    str = str.replace(/-/g, "+").replace(/_/g, "/");
-    while (str.length % 4) str += "=";
-    var binary = atob(str);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new TextDecoder("utf-8").decode(bytes);
-  }
-
+  // 中繼頁參數與 Deep Link 參數 1:1 對應，明文直接透傳整個 query string
+  // （env 是控制測試版 scheme 用的保留字，不會轉發給 App）。
   var searchParams = new URLSearchParams(window.location.search);
   var isTestMode = searchParams.get("env") === "test";
   var schemeName = isTestMode ? TEST_SCHEME_NAME : SCHEME_NAME;
   var appSchemeHost = schemeName + "://Launcher";
-  var dParam = searchParams.get("d");
-  var rawQuery = "";
-  if (dParam) {
-    try {
-      rawQuery = base64UrlDecode(dParam);
-    } catch (e) {
-      rawQuery = "";
-    }
-  }
-  var params = new URLSearchParams(rawQuery);
+  searchParams.delete("env");
+  var rawQuery = searchParams.toString();
+  var params = searchParams;
 
   var hasAction = false;
   params.forEach(function (value, key) {
