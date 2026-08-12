@@ -81,7 +81,10 @@
   // ---- 解析網址參數 ------------------------------------------------
   // 中繼頁參數與 Deep Link 參數 1:1 對應，明文直接透傳整個 query string
   // （env 是控制測試版 scheme 用的保留字，不會轉發給 App）。
-  var searchParams = new URLSearchParams(window.location.search);
+  // 防呆：如果連結來源沒把 & 正確處理、變成字面上的 &amp;，這裡先還原回 &，
+  // 不然 Action 會被解析成 amp;Action，整頁會完全沒反應。
+  var normalizedSearch = window.location.search.replace(/&amp;/g, "&");
+  var searchParams = new URLSearchParams(normalizedSearch);
   var isTestMode = searchParams.get("env") === "test";
   var schemeName = isTestMode ? TEST_SCHEME_NAME : SCHEME_NAME;
   var appSchemeHost = schemeName + "://Launcher";
