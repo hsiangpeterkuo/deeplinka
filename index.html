@@ -38,9 +38,30 @@
 
   // ---- 解析網址參數 ------------------------------------------------
   // 中繼頁參數與 Deep Link 參數 1:1 對應，直接透傳整個 query string。
-  
-  var rawQuery = window.location.search.replace(/^\?/, "");
-  var params = new URLSearchParams(window.location.search);
+  // 支援 ?d=<base64url> 把整串 query string 編碼成一個不透明的參數，
+  // 避免網址上直接看到 Action=... 等明文；沒有 d 的話就用原始 query string。
+  function base64UrlDecode(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var binary = atob(str);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  var searchParams = new URLSearchParams(window.location.search);
+  var dParam = searchParams.get("d");
+  var rawQuery;
+  if (dParam) {
+    try {
+      rawQuery = base64UrlDecode(dParam);
+    } catch (e) {
+      rawQuery = "";
+    }
+  } else {
+    rawQuery = window.location.search.replace(/^\?/, "");
+  }
+  var params = new URLSearchParams(rawQuery);
 
   var hasAction = false;
   params.forEach(function (value, key) {
