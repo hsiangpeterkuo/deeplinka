@@ -46,7 +46,8 @@
   "use strict";
 
   // ---- 固定設定：下載連結與 App Scheme -------------------------------
-  var APP_SCHEME_HOST = "fap-aipro://Launcher";
+  var SCHEME_NAME = "fap-aipro";
+  var TEST_SCHEME_NAME = "efap-aipro"; // 測試版 App 用的 scheme，網址帶 ?env=test 時啟用
   var IOS_STORE_URL = "https://apps.apple.com/tw/app/id6751573234";
   var ANDROID_STORE_URL = "https://play.google.com/store/apps/details?id=com.fubon.securities.fubonaipro&hl=zh_TW";
   var ANDROID_PACKAGE = "com.fubon.securities.fubonaipro";
@@ -85,6 +86,9 @@
   }
 
   var searchParams = new URLSearchParams(window.location.search);
+  var isTestMode = searchParams.get("env") === "test";
+  var schemeName = isTestMode ? TEST_SCHEME_NAME : SCHEME_NAME;
+  var appSchemeHost = schemeName + "://Launcher";
   var dParam = searchParams.get("d");
   var rawQuery = "";
   if (dParam) {
@@ -103,12 +107,12 @@
 
   if (!hasAction) return;
 
-  var deepLink = APP_SCHEME_HOST + (rawQuery ? "?" + rawQuery : "");
+  var deepLink = appSchemeHost + (rawQuery ? "?" + rawQuery : "");
 
   function buildAndroidIntentUrl() {
     var intentPath = rawQuery ? "Launcher?" + rawQuery : "Launcher";
     return "intent://" + intentPath +
-      "#Intent;scheme=fap-aipro;package=" + ANDROID_PACKAGE +
+      "#Intent;scheme=" + schemeName + ";package=" + ANDROID_PACKAGE +
       ";S.browser_fallback_url=" + encodeURIComponent(ANDROID_STORE_URL) + ";end";
   }
 
